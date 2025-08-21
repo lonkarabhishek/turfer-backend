@@ -48,6 +48,8 @@ app.use(helmet({
 }));
 app.use(cors({
   origin: (origin, callback) => {
+    console.log('CORS request from origin:', origin);
+    
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
@@ -56,23 +58,30 @@ app.use(cors({
       'http://localhost:5173',
       'http://localhost:5175',
       'https://www.tapturf.in',
-      'https://tapturf.in'
+      'https://tapturf.in',
+      'https://turfer-3kczypujz-abhisheks-projects-dabd8858.vercel.app',
+      'https://turfer-git-main-abhisheks-projects-dabd8858.vercel.app'
     ];
     
     // Allow any Vercel deployment domain
-    if (origin.includes('.vercel.app')) {
+    if (origin.includes('.vercel.app') || origin.includes('tapturf.in')) {
+      console.log('✅ CORS allowed for:', origin);
       return callback(null, true);
     }
     
-    if (allowedOrigins.includes(origin) || process.env.CORS_ORIGIN === '*') {
+    if (allowedOrigins.includes(origin)) {
+      console.log('✅ CORS allowed for:', origin);
       return callback(null, true);
     }
     
+    console.log('❌ CORS blocked for:', origin);
     callback(new Error('Not allowed by CORS'));
   },
-  credentials: process.env.NODE_ENV === 'production',
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 }));
 app.use(compression());
 app.use(express.json({ limit: '10mb' }));
