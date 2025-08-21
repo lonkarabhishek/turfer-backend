@@ -55,7 +55,8 @@ app.use(cors({
       'http://localhost:3000',
       'http://localhost:5173',
       'http://localhost:5175',
-      'https://turfer-3kczypujz-abhisheks-projects-dabd8858.vercel.app'
+      'https://www.tapturf.in',
+      'https://tapturf.in'
     ];
     
     // Allow any Vercel deployment domain
