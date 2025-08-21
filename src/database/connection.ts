@@ -218,7 +218,7 @@ class DatabaseConnection {
       );
 
       // Load turf data from JSON file
-      const seedDataPath = path.join(__dirname, '../../../public/nashik_turfs.seed.json');
+      const seedDataPath = path.join(__dirname, 'nashik_turfs.seed.json');
       const seedData = JSON.parse(readFileSync(seedDataPath, 'utf8'));
 
       // Insert turfs from seed data
