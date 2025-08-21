@@ -53,6 +53,24 @@ export class GameModel extends BaseModel {
     return rows.map(this.mapRowToGame);
   }
 
+  async findJoinedGames(userId: string): Promise<GameType[]> {
+    const sql = `
+      SELECT g.*, t.name as turf_name, t.address as turf_address
+      FROM games g
+      JOIN turfs t ON g.turf_id = t.id
+      WHERE (
+        JSON_EXTRACT(g.confirmed_players, '$') LIKE '%' || ? || '%'
+        OR g.host_id = ?
+      )
+      AND g.status IN ('open', 'in_progress')
+      AND datetime(g.date || ' ' || g.start_time) > datetime('now')
+      ORDER BY datetime(g.date || ' ' || g.start_time) ASC
+    `;
+    const rows = await this.db.all(sql, [userId, userId]);
+    
+    return rows.map(this.mapRowToGame);
+  }
+
   async findAvailableGames(filters: {
     sport?: string;
     skillLevel?: string;

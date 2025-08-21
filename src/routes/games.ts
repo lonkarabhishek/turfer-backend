@@ -61,6 +61,24 @@ router.get('/my-games', authenticateToken, async (req: AuthRequest, res: Respons
   }
 });
 
+// Get games user has joined (upcoming games)
+router.get('/joined', authenticateToken, async (req: AuthRequest, res: Response) => {
+  try {
+    const games = await gameModel.findJoinedGames(req.user!.id);
+
+    res.json({
+      success: true,
+      data: games
+    } as ApiResponse);
+  } catch (error: any) {
+    console.error('Get joined games error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    } as ApiResponse);
+  }
+});
+
 // Get game by ID
 router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
   try {
