@@ -101,13 +101,37 @@ app.use((req, res, next) => {
   next();
 });
 
-// Health check endpoint
+// Health check endpoint - respond immediately for Railway
 app.get('/health', (req, res) => {
-  res.json({
+  res.status(200).json({
     success: true,
     message: 'Turf booking API is running',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT,
+    node_version: process.version
+  });
+});
+
+// Simple ping endpoint
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.status(200).json({
+    message: 'TapTurf Backend API',
+    version: '1.0.9',
+    status: 'running',
+    endpoints: {
+      health: '/health',
+      api: '/api',
+      auth: '/api/auth',
+      turfs: '/api/turfs',
+      games: '/api/games',
+      bookings: '/api/bookings'
+    }
   });
 });
 
