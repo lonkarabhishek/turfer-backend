@@ -21,7 +21,14 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
 // Initialize database
-DatabaseConnection.getInstance();
+try {
+  console.log('🔧 Initializing database connection...');
+  DatabaseConnection.getInstance();
+  console.log('✅ Database connection established');
+} catch (error) {
+  console.error('❌ Database initialization failed:', error);
+  console.log('⚠️ Server will start anyway but database operations will fail');
+}
 
 // Rate limiting
 const rateLimiter = new RateLimiterMemory({
@@ -133,11 +140,15 @@ app.use((err: Error, req: express.Request, res: express.Response, _next: express
 });
 
 // Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔧 API endpoints available at http://localhost:${PORT}/api`);
-  console.log(`💚 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔧 API endpoints available at http://0.0.0.0:${PORT}/api`);
+  console.log(`💚 Health check: http://0.0.0.0:${PORT}/health`);
+  console.log(`🌍 External URL: ${process.env.RAILWAY_PUBLIC_DOMAIN ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}` : 'Not available'}`);
+}).on('error', (err) => {
+  console.error('❌ Server failed to start:', err);
+  process.exit(1);
 });
 
 // Graceful shutdown

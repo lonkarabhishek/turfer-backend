@@ -24,7 +24,8 @@ class DatabaseConnection {
 
     this.initializeDatabase().catch(err => {
       console.error('❌ Database initialization failed:', err);
-      throw err;
+      console.log('⚠️ Database operations will not work until this is resolved');
+      // Don't throw here to allow server to start
     });
   }
 
