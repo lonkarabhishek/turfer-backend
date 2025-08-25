@@ -1,12 +1,12 @@
 {
   "name": "turf-booking-backend",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "description": "Backend API for turf booking application",
   "main": "dist/server.js",
   "scripts": {
     "dev": "nodemon src/server.ts",
     "build": "tsc && node copy-assets.js",
-    "start": "node dist/server.js",
+    "start": "node simple-server.js",
     "postinstall": "npm run build",
     "railway:build": "npm rebuild sqlite3 && npm run build",
     "railway:start": "npm start",
