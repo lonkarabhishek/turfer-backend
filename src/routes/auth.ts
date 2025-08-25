@@ -34,7 +34,7 @@ router.post('/register', validate(userRegistrationSchema), async (req: Request, 
     // Generate JWT token
     const jwtPayload = { id: user.id, email: user.email, role: user.role };
     const jwtSecret = process.env.JWT_SECRET!;
-    const jwtOptions: any = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
+    const jwtOptions = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions;
     const token = jwt.sign(jwtPayload, jwtSecret, jwtOptions);
 
     // Remove password from response
@@ -48,7 +48,7 @@ router.post('/register', validate(userRegistrationSchema), async (req: Request, 
       },
       message: 'User registered successfully'
     } as ApiResponse);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Registration error:', error);
     res.status(500).json({
       success: false,
@@ -83,7 +83,7 @@ router.post('/login', validate(userLoginSchema), async (req: Request, res: Respo
     // Generate JWT token
     const jwtPayload = { id: user.id, email: user.email, role: user.role };
     const jwtSecret = process.env.JWT_SECRET!;
-    const jwtOptions: any = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
+    const jwtOptions = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as jwt.SignOptions;
     const token = jwt.sign(jwtPayload, jwtSecret, jwtOptions);
 
     // Remove password from response
@@ -97,7 +97,7 @@ router.post('/login', validate(userLoginSchema), async (req: Request, res: Respo
       },
       message: 'Login successful'
     } as ApiResponse);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
@@ -120,7 +120,7 @@ router.get('/me', async (req: Request, res: Response) => {
       } as ApiResponse);
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as jwt.JwtPayload;
     const user = await userModel.findById(decoded.id);
 
     if (!user) {
@@ -137,7 +137,7 @@ router.get('/me', async (req: Request, res: Response) => {
       success: true,
       data: userWithoutPassword
     } as ApiResponse);
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Get profile error:', error);
     res.status(500).json({
       success: false,

@@ -1,5 +1,5 @@
 import { BaseModel } from './BaseModel';
-import { Game as GameType } from '../types';
+import { Game as GameType, JoinRequest } from '../types';
 
 export class GameModel extends BaseModel {
   async create(gameData: Omit<GameType, 'id' | 'createdAt' | 'updatedAt'>): Promise<GameType> {
@@ -152,7 +152,7 @@ export class GameModel extends BaseModel {
       return { success: false, message: 'Already joined this game' };
     }
 
-    if (game.joinRequests.includes(userId)) {
+    if (game.joinRequests.some(req => req.userId === userId)) {
       return { success: false, message: 'Join request already pending' };
     }
 
@@ -170,7 +170,11 @@ export class GameModel extends BaseModel {
       return { success: true, message: 'Successfully joined the game' };
     } else {
       // For private games, add to join requests
-      const updatedJoinRequests = [...game.joinRequests, userId];
+      const updatedJoinRequests = [...game.joinRequests, {
+        userId,
+        requestedAt: new Date().toISOString(),
+        status: 'pending' as const
+      }];
       
       await this.update(gameId, {
         joinRequests: updatedJoinRequests
@@ -187,7 +191,7 @@ export class GameModel extends BaseModel {
     }
 
     const updatedConfirmedPlayers = game.confirmedPlayers.filter(id => id !== userId);
-    const updatedJoinRequests = game.joinRequests.filter(id => id !== userId);
+    const updatedJoinRequests = game.joinRequests.filter(req => req.userId !== userId);
     
     if (updatedConfirmedPlayers.length === game.confirmedPlayers.length && 
         updatedJoinRequests.length === game.joinRequests.length) {
@@ -216,11 +220,11 @@ export class GameModel extends BaseModel {
       return { success: false, message: 'Only the host can approve join requests' };
     }
 
-    if (!game.joinRequests.includes(userId)) {
+    if (!game.joinRequests.some(req => req.userId === userId)) {
       return { success: false, message: 'No pending join request from this user' };
     }
 
-    const updatedJoinRequests = game.joinRequests.filter(id => id !== userId);
+    const updatedJoinRequests = game.joinRequests.filter(req => req.userId !== userId);
 
     if (approve) {
       if (game.currentPlayers >= game.maxPlayers) {
@@ -280,6 +284,114 @@ export class GameModel extends BaseModel {
     const sql = 'DELETE FROM games WHERE id = ?';
     const result = await this.db.run(sql, [id]);
     return result.changes > 0;
+  }
+
+  async createJoinRequest(gameId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const game = await this.findById(gameId);
+      if (!game) {
+        return { success: false, message: 'Game not found' };
+      }
+
+      if (game.hostId === userId) {
+        return { success: false, message: 'You cannot join your own game' };
+      }
+
+      if (game.confirmedPlayers.includes(userId)) {
+        return { success: false, message: 'Already joined this game' };
+      }
+
+      if (game.joinRequests.find(req => req.userId === userId)) {
+        return { success: false, message: 'Join request already pending' };
+      }
+
+      const joinRequests = game.joinRequests || [];
+      joinRequests.push({
+        userId,
+        requestedAt: new Date().toISOString(),
+        status: 'pending'
+      });
+
+      await this.db.run(
+        'UPDATE games SET join_requests = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [JSON.stringify(joinRequests), gameId]
+      );
+
+      return { success: true, message: 'Join request sent successfully' };
+    } catch (error) {
+      console.error('Error creating join request:', error);
+      return { success: false, message: 'Failed to send join request' };
+    }
+  }
+
+  async getJoinRequests(gameId: string): Promise<JoinRequest[]> {
+    try {
+      const game = await this.findById(gameId);
+      if (!game) return [];
+      
+      return game.joinRequests || [];
+    } catch (error) {
+      console.error('Error getting join requests:', error);
+      return [];
+    }
+  }
+
+  async acceptRequest(gameId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const game = await this.findById(gameId);
+      if (!game) {
+        return { success: false, message: 'Game not found' };
+      }
+
+      const joinRequests = game.joinRequests || [];
+      const requestIndex = joinRequests.findIndex(req => req.userId === userId);
+      
+      if (requestIndex === -1) {
+        return { success: false, message: 'Join request not found' };
+      }
+
+      // Remove from requests and add to confirmed players
+      joinRequests.splice(requestIndex, 1);
+      const confirmedPlayers = [...game.confirmedPlayers, userId];
+
+      await this.db.run(
+        'UPDATE games SET join_requests = ?, confirmed_players = ?, current_players = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [JSON.stringify(joinRequests), JSON.stringify(confirmedPlayers), confirmedPlayers.length + 1, gameId]
+      );
+
+      return { success: true, message: 'Player request accepted' };
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      return { success: false, message: 'Failed to accept request' };
+    }
+  }
+
+  async rejectRequest(gameId: string, userId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const game = await this.findById(gameId);
+      if (!game) {
+        return { success: false, message: 'Game not found' };
+      }
+
+      const joinRequests = game.joinRequests || [];
+      const requestIndex = joinRequests.findIndex(req => req.userId === userId);
+      
+      if (requestIndex === -1) {
+        return { success: false, message: 'Join request not found' };
+      }
+
+      joinRequests.splice(requestIndex, 1);
+
+      await this.db.run(
+        'UPDATE games SET join_requests = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+        [JSON.stringify(joinRequests), gameId]
+      );
+
+      return { success: true, message: 'Player request rejected' };
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      return { success: false, message: 'Failed to reject request' };
+    }
   }
 
   private mapRowToGame(row: any): GameType {

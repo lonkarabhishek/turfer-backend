@@ -95,7 +95,7 @@ router.get('/:id', optionalAuth, async (req: AuthRequest, res: Response) => {
     if (game.isPrivate && req.user) {
       const isParticipant = game.hostId === req.user.id || 
                            game.confirmedPlayers.includes(req.user.id) ||
-                           game.joinRequests.includes(req.user.id);
+                           game.joinRequests.some(joinReq => joinReq.userId === req.user!.id);
       
       if (!isParticipant) {
         return res.status(403).json({

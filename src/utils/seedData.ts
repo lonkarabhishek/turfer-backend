@@ -28,7 +28,7 @@ export async function seedDatabase() {
     });
 
     // Create sample user
-    const sampleUser = await userModel.create({
+    await userModel.create({
       name: 'John Doe',
       email: 'user@turfbooking.com',
       password: 'password123',

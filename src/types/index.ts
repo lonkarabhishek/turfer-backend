@@ -61,6 +61,12 @@ export interface Booking {
   updatedAt: Date;
 }
 
+export interface JoinRequest {
+  userId: string;
+  requestedAt: string;
+  status: 'pending' | 'accepted' | 'rejected';
+}
+
 export interface Game {
   id: string;
   hostId: string;
@@ -77,7 +83,7 @@ export interface Game {
   description?: string;
   notes?: string;
   isPrivate: boolean;
-  joinRequests: string[]; // user IDs
+  joinRequests: JoinRequest[]; // detailed join request objects
   confirmedPlayers: string[]; // user IDs
   status: 'open' | 'full' | 'in_progress' | 'completed' | 'cancelled';
   createdAt: Date;
