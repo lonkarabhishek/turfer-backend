@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { TurfModel } from '../models/Turf';
+import { TurfModel } from '../models/TurfSupabase';
 import { AuthRequest, authenticateToken, requireRole, optionalAuth } from '../middleware/auth';
 import { validate, turfCreateSchema } from '../middleware/validation';
 import { ApiResponse, SearchQuery } from '../types';
@@ -26,17 +26,22 @@ router.get('/', optionalAuth, async (req: AuthRequest, res: Response) => {
     };
 
     console.log('Processed search query:', query);
-    const result = await turfModel.search(query);
-    console.log('Search result:', result);
+    const turfs = await turfModel.search(query.query || '', {
+      sport: query.sport,
+      priceMin: query.priceMin,
+      priceMax: query.priceMax,
+      limit: query.limit
+    });
+    console.log('Search result:', turfs);
 
     res.json({
       success: true,
       data: {
-        turfs: result.turfs,
-        total: result.total,
+        turfs: turfs,
+        total: turfs.length,
         page: query.page,
         limit: query.limit,
-        totalPages: Math.ceil(result.total / (query.limit || 10))
+        totalPages: Math.ceil(turfs.length / (query.limit || 10))
       }
     } as ApiResponse);
   } catch (error: any) {

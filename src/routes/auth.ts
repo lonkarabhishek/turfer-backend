@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import { UserModel } from '../models/User';
+import { UserModel } from '../models/UserSupabase';
 import { validate, userRegistrationSchema, userLoginSchema } from '../middleware/validation';
 import { ApiResponse } from '../types';
 
@@ -72,7 +72,7 @@ router.post('/login', validate(userLoginSchema), async (req: Request, res: Respo
     }
 
     // Validate password
-    const isValidPassword = await userModel.validatePassword(password, user.password);
+    const isValidPassword = await userModel.validatePassword(user, password);
     if (!isValidPassword) {
       return res.status(401).json({
         success: false,

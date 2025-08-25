@@ -12,7 +12,7 @@ import bookingRoutes from './routes/bookings';
 import gameRoutes from './routes/games';
 
 // Import database connection
-import DatabaseConnection from './database/connection';
+import SupabaseConnection from './database/supabase';
 
 // Load environment variables
 config();
@@ -22,11 +22,11 @@ const PORT = Number(process.env.PORT) || 3001;
 
 // Initialize database
 try {
-  console.log('🔧 Initializing database connection...');
-  DatabaseConnection.getInstance();
-  console.log('✅ Database connection established');
+  console.log('🔧 Initializing Supabase connection...');
+  SupabaseConnection.getInstance();
+  console.log('✅ Supabase connection established');
 } catch (error) {
-  console.error('❌ Database initialization failed:', error);
+  console.error('❌ Supabase initialization failed:', error);
   console.log('⚠️ Server will start anyway but database operations will fail');
 }
 
@@ -178,24 +178,12 @@ app.listen(PORT, '0.0.0.0', () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
-  try {
-    await DatabaseConnection.getInstance().close();
-    process.exit(0);
-  } catch (error) {
-    console.error('Error during shutdown:', error);
-    process.exit(1);
-  }
+  process.exit(0);
 });
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
-  try {
-    await DatabaseConnection.getInstance().close();
-    process.exit(0);
-  } catch (error) {
-    console.error('Error during shutdown:', error);
-    process.exit(1);
-  }
+  process.exit(0);
 });
 
 export default app;

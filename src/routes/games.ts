@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
-import { GameModel } from '../models/Game';
-import { TurfModel } from '../models/Turf';
+import { GameModel } from '../models/GameSupabase';
+import { TurfModel } from '../models/TurfSupabase';
 import { AuthRequest, authenticateToken, optionalAuth } from '../middleware/auth';
 import { validate, gameCreateSchema } from '../middleware/validation';
 import { ApiResponse } from '../types';

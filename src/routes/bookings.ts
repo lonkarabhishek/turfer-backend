@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
-import { BookingModel } from '../models/Booking';
-import { TurfModel } from '../models/Turf';
+import { BookingModel } from '../models/BookingSupabase';
+import { TurfModel } from '../models/TurfSupabase';
 import { AuthRequest, authenticateToken } from '../middleware/auth';
 import { validate, bookingCreateSchema } from '../middleware/validation';
 import { ApiResponse } from '../types';
@@ -15,7 +15,7 @@ router.get('/my-bookings', authenticateToken, async (req: AuthRequest, res: Resp
     const status = req.query.status as string;
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
 
-    const bookings = await bookingModel.findByUserId(req.user!.id, { status, limit });
+    const bookings = await bookingModel.findByUserId(req.user!.id);
 
     res.json({
       success: true,
@@ -238,7 +238,7 @@ router.get('/turf/:turfId', authenticateToken, async (req: AuthRequest, res: Res
       } as ApiResponse);
     }
 
-    const bookings = await bookingModel.findByTurfId(turfId, { date, status });
+    const bookings = await bookingModel.findByTurfId(turfId);
 
     res.json({
       success: true,
