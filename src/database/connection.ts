@@ -10,15 +10,22 @@ class DatabaseConnection {
 
   private constructor() {
     const dbPath = process.env.DATABASE_URL || './database.sqlite';
+    console.log(`🔧 Opening SQLite database at: ${dbPath}`);
+    console.log(`📊 Environment: ${process.env.NODE_ENV}`);
+    
     this.db = new Database(dbPath, (err) => {
       if (err) {
-        console.error('Error opening database:', err.message);
+        console.error('❌ Error opening database:', err.message);
+        console.error('Database path attempted:', dbPath);
         throw err;
       }
-      console.log('Connected to SQLite database');
+      console.log('✅ Connected to SQLite database');
     });
 
-    this.initializeDatabase();
+    this.initializeDatabase().catch(err => {
+      console.error('❌ Database initialization failed:', err);
+      throw err;
+    });
   }
 
   public static getInstance(): DatabaseConnection {
@@ -30,10 +37,14 @@ class DatabaseConnection {
 
   private async initializeDatabase() {
     try {
+      console.log('🔧 Initializing database schema...');
+      
       // Enable foreign keys
+      console.log('⚙️ Enabling foreign keys...');
       await this.run('PRAGMA foreign_keys = ON');
       
       // Embedded SQL schema instead of reading from file
+      console.log('🗃️ Creating database tables...');
       const schema = `
         CREATE TABLE IF NOT EXISTS users (
           id TEXT PRIMARY KEY,
@@ -131,20 +142,29 @@ class DatabaseConnection {
       
       // Split by semicolons and execute each statement
       const statements = schema.split(';').filter(stmt => stmt.trim());
+      console.log(`📊 Executing ${statements.length} schema statements...`);
       
-      for (const statement of statements) {
-        const trimmed = statement.trim();
+      for (let i = 0; i < statements.length; i++) {
+        const trimmed = statements[i].trim();
         if (trimmed) {
-          await this.run(trimmed);
+          try {
+            await this.run(trimmed);
+            console.log(`✅ Statement ${i + 1}/${statements.length} executed successfully`);
+          } catch (statementError: any) {
+            console.error(`❌ Error executing statement ${i + 1}:`, statementError.message);
+            console.error('Statement was:', trimmed.substring(0, 100) + '...');
+            throw statementError;
+          }
         }
       }
       
-      console.log('Database schema initialized successfully');
+      console.log('✅ Database schema initialized successfully');
       
       // Load seed data
       await this.loadSeedData();
-    } catch (error) {
-      console.error('Error initializing database:', error);
+    } catch (error: any) {
+      console.error('❌ Error initializing database:', error.message);
+      console.error('Full error:', error);
       throw error;
     }
   }
@@ -217,9 +237,42 @@ class DatabaseConnection {
         [demoOwnerId, 'owner@turfbooking.com', demoOwnerPassword, 'Demo Owner', '9876543211', 'owner', 1]
       );
 
-      // Load turf data from JSON file
-      const seedDataPath = path.join(__dirname, 'nashik_turfs.seed.json');
-      const seedData = JSON.parse(readFileSync(seedDataPath, 'utf8'));
+      // Try to load turf data from JSON file, fallback to hardcoded data
+      let seedData = [];
+      try {
+        const seedDataPath = path.join(__dirname, 'nashik_turfs.seed.json');
+        seedData = JSON.parse(readFileSync(seedDataPath, 'utf8'));
+        console.log('Loaded seed data from file:', seedDataPath);
+      } catch (fileError) {
+        console.log('Seed file not found, using hardcoded turfs...');
+        // Fallback hardcoded data
+        seedData = [
+          {
+            name: "Green Valley Sports Complex",
+            address: "Nashik Road, Near Railway Station, Nashik",
+            sports: ["Cricket", "Football"],
+            amenities: ["Parking", "Changing Room", "Floodlights"],
+            rates: "₹800",
+            operating_hours: "6:00 AM - 11:00 PM"
+          },
+          {
+            name: "Champions Cricket Club",
+            address: "Gangapur Road, Nashik",
+            sports: ["Cricket"],
+            amenities: ["Parking", "Cafeteria", "Rest Room"],
+            rates: "₹1000",
+            operating_hours: "5:00 AM - 10:00 PM"
+          },
+          {
+            name: "Sports Zone Nashik",
+            address: "College Road, Nashik",
+            sports: ["Football", "Cricket", "Badminton"],
+            amenities: ["Parking", "Changing Room", "Equipment Rental"],
+            rates: "₹600",
+            operating_hours: "6:00 AM - 10:00 PM"
+          }
+        ];
+      }
 
       // Insert turfs from seed data
       for (const turfData of seedData) {
