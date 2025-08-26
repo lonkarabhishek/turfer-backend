@@ -6,10 +6,13 @@ export class UserModel extends SupabaseModel {
   protected tableName = 'users';
 
   async create(userData: Omit<UserType, 'id' | 'createdAt' | 'updatedAt'>): Promise<UserType> {
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(userData.password, 10);
+    
     const data = {
       id: this.generateId(),
       email: userData.email,
-      password: userData.password,
+      password: hashedPassword,
       name: userData.name,
       phone: userData.phone,
       role: userData.role,
